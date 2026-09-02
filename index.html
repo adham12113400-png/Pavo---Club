@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAVO CLUB</title>
+<meta name="description" content="الموقع الرسمي لنادي PAVO CLUB">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="public">
+
+  <!-- ============ Header ============ -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <img id="headerLogo" class="brand-logo img-placeholder" alt="شعار النادي">
+        <span id="headerClubName">PAVO CLUB</span>
+      </div>
+
+      <button class="nav-toggle" id="navToggle" aria-label="القائمة">☰</button>
+
+      <nav class="main-nav" id="mainNav">
+        <a href="#hero">الرئيسية</a>
+        <a href="#club">النادي</a>
+        <a href="#players">اللاعبون</a>
+        <a href="#matches">المباريات</a>
+        <a href="#news">الأخبار</a>
+        <a href="admin.html" class="admin-link">الأدمن</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ============ Hero ============ -->
+  <section id="hero" class="hero">
+    <div class="container">
+      <img id="heroLogo" class="hero-logo img-placeholder" alt="شعار النادي">
+      <h1 id="heroClubName" class="hero-name">PAVO CLUB</h1>
+      <p id="heroDescription" class="hero-desc">لا توجد بيانات حاليًا</p>
+    </div>
+  </section>
+
+  <!-- ============ هوية النادي ============ -->
+  <section id="club" class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2 class="section-title">هوية النادي</h2>
+      </div>
+
+      <div class="identity-grid">
+        <img id="identityLogo" class="identity-logo img-placeholder" alt="شعار النادي">
+
+        <div class="identity-facts">
+          <div class="fact-item full">
+            <span class="fact-label">اسم النادي</span>
+            <span class="fact-value" id="identityName">لا توجد بيانات حاليًا</span>
+          </div>
+          <div class="fact-item">
+            <span class="fact-label">المدينة</span>
+            <span class="fact-value" id="identityCity">لا توجد بيانات حاليًا</span>
+          </div>
+          <div class="fact-item">
+            <span class="fact-label">سنة التأسيس</span>
+            <span class="fact-value" id="identityFounded">لا توجد بيانات حاليًا</span>
+          </div>
+          <div class="fact-item">
+            <span class="fact-label">ألوان النادي</span>
+            <span class="fact-value" id="identityColors">لا توجد بيانات حاليًا</span>
+          </div>
+          <div class="fact-item">
+            <span class="fact-label">بيانات التواصل</span>
+            <span class="fact-value" id="identityContact">لا توجد بيانات حاليًا</span>
+          </div>
+          <div class="fact-item full">
+            <span class="fact-label">وصف النادي</span>
+            <span class="fact-value" id="identityDescription">لا توجد بيانات حاليًا</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ مستوى قوة النادي ============ -->
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="section-head">
+        <h2 class="section-title">مستوى قوة النادي</h2>
+      </div>
+      <div class="strength-card">
+        <div class="strength-value" id="strengthValue">غير محدد</div>
+        <div class="strength-bar-track">
+          <div class="strength-bar-fill" id="strengthBarFill"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ اللاعبون ============ -->
+  <section id="players" class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2 class="section-title">لاعبي PAVO</h2>
+      </div>
+      <div class="players-grid" id="playersGrid">
+        <p class="empty-msg">لا توجد بيانات حاليًا</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ المباريات ============ -->
+  <section id="matches" class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2 class="section-title">المباريات</h2>
+      </div>
+
+      <div class="matches-tabs-grid">
+        <div>
+          <h3 class="matches-subtitle">مباشر الآن</h3>
+          <div id="liveMatchContainer">
+            <p class="empty-msg">لا توجد مباراة مباشرة حاليًا</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="matches-subtitle">المباريات القادمة</h3>
+          <div id="upcomingMatchesList">
+            <p class="empty-msg">لا توجد بيانات حاليًا</p>
+          </div>
+          <div class="countdown-box" id="nextMatchCountdown"></div>
+        </div>
+
+        <div>
+          <h3 class="matches-subtitle">أحداث المباراة</h3>
+          <div class="events-list" id="eventsList">
+            <p class="empty-msg">لا توجد بيانات حاليًا</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="matches-subtitle">المباريات السابقة</h3>
+          <div id="pastMatchesList">
+            <p class="empty-msg">لا توجد بيانات حاليًا</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ الأخبار ============ -->
+  <section id="news" class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2 class="section-title">آخر الأخبار</h2>
+      </div>
+      <div class="news-grid" id="newsList">
+        <p class="empty-msg">لا توجد أخبار حاليًا</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Footer ============ -->
+  <footer class="site-footer">
+    <div class="container">
+      <p><strong id="footerClubName">PAVO CLUB</strong> — جميع الحقوق محفوظة © <span id="footerYear"></span></p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    // فتح/إغلاق قائمة الجوال
+    document.getElementById("navToggle").addEventListener("click", function () {
+      document.getElementById("mainNav").classList.toggle("open");
+    });
+  </script>
+</body>
+</html>

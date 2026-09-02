@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم PAVO CLUB</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="admin">
+
+  <!-- ============ شاشة تسجيل الدخول ============ -->
+  <div class="admin-login-wrap" id="adminLoginScreen">
+    <div class="admin-login-box">
+      <h1>لوحة تحكم PAVO CLUB</h1>
+      <p class="subtitle">الدخول مخصص لمسؤولي النادي فقط</p>
+      <form id="adminLoginForm">
+        <div class="form-field">
+          <label for="adminPasswordInput">كلمة المرور</label>
+          <input type="password" id="adminPasswordInput" placeholder="********" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">دخول</button>
+        <div class="login-error" id="loginError"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ تطبيق لوحة التحكم ============ -->
+  <div class="admin-app" id="adminApp" style="display:none;">
+
+    <aside class="admin-sidebar">
+      <div class="brand">
+        <span>PAVO — الأدمن</span>
+      </div>
+      <div class="admin-nav-item active" data-target="section-dashboard">📊 لوحة المؤشرات</div>
+      <div class="admin-nav-item" data-target="section-club">🛡️ هوية النادي</div>
+      <div class="admin-nav-item" data-target="section-players">👥 اللاعبون</div>
+      <div class="admin-nav-item" data-target="section-matches">⚽ المباريات</div>
+      <div class="admin-nav-item" data-target="section-events">📋 أحداث المباراة</div>
+      <div class="admin-nav-item" data-target="section-news">📰 الأخبار</div>
+      <div class="admin-nav-item" id="logoutBtn">🚪 تسجيل الخروج</div>
+    </aside>
+
+    <main class="admin-main">
+
+      <!-- ---------- Dashboard ---------- -->
+      <section class="admin-panel-section active" id="section-dashboard">
+        <div class="admin-topbar"><h2>لوحة المؤشرات</h2></div>
+
+        <div class="notice-box">
+          القراءة تعمل مباشرة من Google Sheets. عمليات الإضافة/التعديل/الحذف تحتاج أن يدعم Google Apps Script
+          الحالي طلبات POST بالإجراءات الموضّحة في رسالة التسليم — إذا لم تتم إضافتها بعد ستظهر رسالة خطأ عند الحفظ.
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="statPlayers">0</div>
+            <div class="stat-label">عدد اللاعبين</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statMatches">0</div>
+            <div class="stat-label">عدد المباريات</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statNews">0</div>
+            <div class="stat-label">عدد الأخبار</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statLive">0</div>
+            <div class="stat-label">مباريات مباشرة الآن</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- هوية النادي ---------- -->
+      <section class="admin-panel-section" id="section-club">
+        <div class="admin-topbar"><h2>هوية النادي</h2></div>
+        <div class="admin-card">
+          <h3>تعديل بيانات النادي</h3>
+          <form id="clubForm">
+            <div class="form-grid">
+              <div class="form-field"><label>اسم النادي</label><input type="text" id="clubNameInput"></div>
+              <div class="form-field"><label>رابط الشعار (Logo URL)</label><input type="text" id="clubLogoInput"></div>
+              <div class="form-field"><label>رابط صورة الغلاف</label><input type="text" id="clubCoverInput"></div>
+              <div class="form-field"><label>المدينة</label><input type="text" id="clubCityInput"></div>
+              <div class="form-field"><label>سنة التأسيس</label><input type="text" id="clubFoundedInput"></div>
+              <div class="form-field"><label>ألوان النادي</label><input type="text" id="clubColorsInput" placeholder="مثال: أزرق وذهبي"></div>
+              <div class="form-field"><label>مستوى قوة النادي (0-100)</label><input type="text" id="clubStrengthInput"></div>
+              <div class="form-field"><label>بيانات التواصل</label><input type="text" id="clubContactInput"></div>
+              <div class="form-field full"><label>وصف النادي</label><textarea id="clubDescInput"></textarea></div>
+            </div>
+            <button type="submit" class="btn btn-gold" style="margin-top:14px;">حفظ التعديلات</button>
+            <div class="action-msg" id="clubActionMsg"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ---------- اللاعبون ---------- -->
+      <section class="admin-panel-section" id="section-players">
+        <div class="admin-topbar"><h2>إدارة اللاعبين</h2></div>
+
+        <div class="admin-card">
+          <h3>قائمة اللاعبين الحالية</h3>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr><th>الاسم</th><th>الرقم</th><th>المركز</th><th>الحالة</th><th>إجراءات</th></tr>
+              </thead>
+              <tbody id="playersTableBody">
+                <tr><td colspan="5">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h3 id="playerFormTitle">إضافة لاعب جديد</h3>
+          <form id="playerForm">
+            <div class="form-grid">
+              <div class="form-field"><label>الاسم</label><input type="text" id="playerNameInput" required></div>
+              <div class="form-field"><label>رقم القميص</label><input type="text" id="playerNumberInput"></div>
+              <div class="form-field"><label>المركز</label><input type="text" id="playerPositionInput" placeholder="مثال: مهاجم"></div>
+              <div class="form-field"><label>رابط الصورة</label><input type="text" id="playerPhotoInput"></div>
+              <div class="form-field"><label>الحالة</label>
+                <select id="playerStatusInput">
+                  <option value="active">نشط</option>
+                  <option value="inactive">معطّل</option>
+                </select>
+              </div>
+              <div class="form-field full"><label>وصف إضافي</label><textarea id="playerDescInput"></textarea></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+              <button type="submit" class="btn btn-gold">حفظ اللاعب</button>
+              <button type="button" class="btn btn-outline" id="playerCancelBtn" style="display:none;">إلغاء التعديل</button>
+            </div>
+            <div class="action-msg" id="playerActionMsg"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ---------- المباريات ---------- -->
+      <section class="admin-panel-section" id="section-matches">
+        <div class="admin-topbar"><h2>إدارة المباريات</h2></div>
+
+        <div class="admin-card">
+          <h3>قائمة المباريات الحالية</h3>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr><th>المنافس</th><th>التاريخ</th><th>البطولة</th><th>الحالة</th><th>النتيجة</th><th>إجراءات</th></tr>
+              </thead>
+              <tbody id="matchesTableBody">
+                <tr><td colspan="6">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h3 id="matchFormTitle">إضافة مباراة جديدة</h3>
+          <form id="matchForm">
+            <div class="form-grid">
+              <div class="form-field"><label>الفريق المنافس</label><input type="text" id="matchOpponentInput" required></div>
+              <div class="form-field"><label>التاريخ</label><input type="date" id="matchDateInput"></div>
+              <div class="form-field"><label>الوقت</label><input type="time" id="matchTimeInput"></div>
+              <div class="form-field"><label>موعد بداية المباراة (للمباشر)</label><input type="datetime-local" id="matchKickoffInput"></div>
+              <div class="form-field"><label>البطولة</label><input type="text" id="matchCompetitionInput"></div>
+              <div class="form-field"><label>الملعب</label><input type="text" id="matchVenueInput"></div>
+              <div class="form-field"><label>نتيجة PAVO</label><input type="number" id="matchPavoScoreInput"></div>
+              <div class="form-field"><label>نتيجة المنافس</label><input type="number" id="matchOppScoreInput"></div>
+              <div class="form-field"><label>حالة المباراة</label>
+                <select id="matchStatusInput">
+                  <option value="upcoming">قادمة</option>
+                  <option value="live">مباشرة الآن</option>
+                  <option value="finished">منتهية</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+              <button type="submit" class="btn btn-gold">حفظ المباراة</button>
+              <button type="button" class="btn btn-outline" id="matchCancelBtn" style="display:none;">إلغاء التعديل</button>
+            </div>
+            <div class="action-msg" id="matchActionMsg"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ---------- أحداث المباراة ---------- -->
+      <section class="admin-panel-section" id="section-events">
+        <div class="admin-topbar"><h2>أحداث المباراة (Match Events)</h2></div>
+
+        <div class="admin-card">
+          <h3>الأحداث الحالية</h3>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr><th>المباراة</th><th>الدقيقة</th><th>اللاعب</th><th>نوع الحدث</th><th>التفاصيل</th><th>إجراءات</th></tr>
+              </thead>
+              <tbody id="eventsTableBody">
+                <tr><td colspan="6">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h3>إضافة حدث جديد</h3>
+          <form id="eventForm">
+            <div class="form-grid">
+              <div class="form-field full">
+                <label>المباراة</label>
+                <select id="eventMatchInput" required></select>
+              </div>
+              <div class="form-field"><label>الدقيقة</label><input type="number" id="eventMinuteInput" required></div>
+              <div class="form-field"><label>اللاعب</label><input type="text" id="eventPlayerInput"></div>
+              <div class="form-field"><label>نوع الحدث</label>
+                <select id="eventTypeInput">
+                  <option value="goal">⚽ هدف</option>
+                  <option value="yellow">🟨 بطاقة صفراء</option>
+                  <option value="red">🟥 بطاقة حمراء</option>
+                  <option value="sub">🔄 تبديل</option>
+                  <option value="other">📌 حدث آخر</option>
+                </select>
+              </div>
+              <div class="form-field full"><label>تفاصيل الحدث</label><textarea id="eventDetailsInput"></textarea></div>
+            </div>
+            <button type="submit" class="btn btn-gold" style="margin-top:14px;">حفظ الحدث</button>
+            <div class="action-msg" id="eventActionMsg"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ---------- الأخبار ---------- -->
+      <section class="admin-panel-section" id="section-news">
+        <div class="admin-topbar"><h2>إدارة الأخبار</h2></div>
+
+        <div class="admin-card">
+          <h3>الأخبار الحالية</h3>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr><th>العنوان</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th></tr>
+              </thead>
+              <tbody id="newsTableBody">
+                <tr><td colspan="4">جاري التحميل...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h3 id="newsFormTitle">إضافة خبر جديد</h3>
+          <form id="newsForm">
+            <div class="form-grid">
+              <div class="form-field full"><label>العنوان</label><input type="text" id="newsTitleInput" required></div>
+              <div class="form-field"><label>التاريخ</label><input type="date" id="newsDateInput"></div>
+              <div class="form-field"><label>رابط الصورة</label><input type="text" id="newsImageInput"></div>
+              <div class="form-field"><label>الحالة</label>
+                <select id="newsStatusInput">
+                  <option value="active">منشور</option>
+                  <option value="inactive">مخفي</option>
+                </select>
+              </div>
+              <div class="form-field full"><label>المحتوى</label><textarea id="newsContentInput"></textarea></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+              <button type="submit" class="btn btn-gold">حفظ الخبر</button>
+              <button type="button" class="btn btn-outline" id="newsCancelBtn" style="display:none;">إلغاء التعديل</button>
+            </div>
+            <div class="action-msg" id="newsActionMsg"></div>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    /* ============================================================
+       منطق لوحة الأدمن (خاص بهذه الصفحة فقط)
+       ============================================================ */
+
+    // ⚠️ ضع كلمة المرور الحقيقية هنا بدلًا من هذا الـ Placeholder قبل النشر
+    const ADMIN_PASSWORD = "101199";
+
+    // -------------------- تسجيل الدخول --------------------
+    function isAdminLoggedIn() {
+      return sessionStorage.getItem("pavo_admin_logged_in") === "true";
+    }
+
+    function showAdminPanel() {
+      document.getElementById("adminLoginScreen").style.display = "none";
+      document.getElementById("adminApp").style.display = "flex";
+      loadAdminData();
+    }
+
+    function showLoginScreen() {
+      document.getElementById("adminLoginScreen").style.display = "flex";
+      document.getElementById("adminApp").style.display = "none";
+    }
+
+    document.getElementById("adminLoginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const val = document.getElementById("adminPasswordInput").value;
+      // ملاحظة: لاحقًا يمكن استبدال هذا الشرط بطلب حقيقي عبر:
+      // const res = await callPavoAction("adminLogin", { password: val });
+      if (val === ADMIN_PASSWORD) {
+        sessionStorage.setItem("pavo_admin_logged_in", "true");
+        document.getElementById("loginError").textContent = "";
+        showAdminPanel();
+      } else {
+        document.getElementById("loginError").textContent = "كلمة المرور غير صحيحة";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+      sessionStorage.removeItem("pavo_admin_logged_in");
+      showLoginScreen();
+    });
+
+    // -------------------- التنقل بين الأقسام --------------------
+    document.querySelectorAll(".admin-nav-item[data-target]").forEach((item) => {
+      item.addEventListener("click", () => {
+        document.querySelectorAll(".admin-nav-item[data-target]").forEach((i) => i.classList.remove("active"));
+        item.classList.add("active");
+        document.querySelectorAll(".admin-panel-section").forEach((s) => s.classList.remove("active"));
+        document.getElementById(item.dataset.target).classList.add("active");
+      });
+    });
+
+    // -------------------- رسائل نجاح/خطأ --------------------
+    function showActionMsg(elId, result) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      if (result && result.success) {
+        el.textContent = result.message || "تم الحفظ بنجاح";
+        el.className = "action-msg success";
+      } else {
+        el.textContent =
+          (result && result.message) ||
+          "تعذر تنفيذ العملية — قد يحتاج Google Apps Script لدعم هذا الإجراء بعد";
+        el.className = "action-msg error";
+      }
+    }
+
+    // -------------------- تحميل كل بيانات الأدمن --------------------
+    async function loadAdminData() {
+      await fetchPavoData();
+      renderDashboardStats();
+      renderClubForm();
+      renderPlayersTable();
+      renderMatchesTable();
+      renderEventsMatchOptions();
+      renderEventsTable();
+      renderNewsTable();
+    }
+
+    function renderDashboardStats() {
+      const stats = computePavoStats();
+      setText("statPlayers", stats.playersCount);
+      setText("statMatches", stats.matchesCount);
+      setText("statNews", stats.newsCount);
+      setText("statLive", stats.liveCount);
+    }
+
+    /* ================= هوية النادي ================= */
+    function renderClubForm() {
+      const info = getClubInfo();
+      document.getElementById("clubNameInput").value = info.name || "";
+      document.getElementById("clubLogoInput").value = info.logo || "";
+      document.getElementById("clubCoverInput").value = info.cover || "";
+      document.getElementById("clubCityInput").value = info.city || "";
+      document.getElementById("clubFoundedInput").value = info.founded || "";
+      document.getElementById("clubColorsInput").value = info.colors || "";
+      document.getElementById("clubStrengthInput").value = info.strength || "";
+      document.getElementById("clubContactInput").value = info.contact || "";
+      document.getElementById("clubDescInput").value = info.description || "";
+    }
+
+    document.getElementById("clubForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById("clubNameInput").value,
+        logo: document.getElementById("clubLogoInput").value,
+        cover: document.getElementById("clubCoverInput").value,
+        city: document.getElementById("clubCityInput").value,
+        founded: document.getElementById("clubFoundedInput").value,
+        colors: document.getElementById("clubColorsInput").value,
+        strength: document.getElementById("clubStrengthInput").value,
+        contact: document.getElementById("clubContactInput").value,
+        description: document.getElementById("clubDescInput").value,
+      };
+      const result = await callPavoAction("updateClub", payload);
+      showActionMsg("clubActionMsg", result);
+      if (result && result.success) loadAdminData();
+    });
+
+    /* ================= اللاعبون ================= */
+    let playerEditId = null;
+
+    function findPlayerById(id) {
+      const players = PAVO_CACHE.players || [];
+      return players.find((p, idx) => String(findValue(p, FIELD_MAP.player.id) || idx) === String(id));
+    }
+
+    function renderPlayersTable() {
+      const tbody = document.getElementById("playersTableBody");
+      const players = PAVO_CACHE.players || [];
+      if (!players.length) {
+        tbody.innerHTML = `<tr><td colspan="5">لا توجد بيانات حاليًا</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = players
+        .map((p, idx) => {
+          const id = findValue(p, FIELD_MAP.player.id) || idx;
+          const name = findValue(p, FIELD_MAP.player.name);
+          const number = findValue(p, FIELD_MAP.player.number);
+          const position = findValue(p, FIELD_MAP.player.position);
+          const status = findValue(p, FIELD_MAP.player.status) || "نشط";
+          return `
+            <tr data-id="${escapeHtml(id)}">
+              <td>${escapeHtml(name || "-")}</td>
+              <td>${escapeHtml(number || "-")}</td>
+              <td>${escapeHtml(position || "-")}</td>
+              <td>${escapeHtml(status)}</td>
+              <td class="actions-cell">
+                <button type="button" class="btn btn-outline btn-sm act-edit">تعديل</button>
+                <button type="button" class="btn btn-danger btn-sm act-delete">حذف</button>
+              </td>
+            </tr>`;
+        })
+        .join("");
+    }
+
+    document.getElementById("playersTableBody").addEventListener("click", function (e) {
+      const row = e.target.closest("tr");
+      if (!row) return;
+      const id = row.dataset.id;
+      if (e.target.classList.contains("act-edit")) editPlayer(id);
+      if (e.target.classList.contains("act-delete")) deletePlayerRow(id);
+    });
+
+    function editPlayer(id) {
+      const p = findPlayerById(id);
+      if (!p) return;
+      playerEditId = id;
+      document.getElementById("playerNameInput").value = findValue(p, FIELD_MAP.player.name);
+      document.getElementById("playerNumberInput").value = findValue(p, FIELD_MAP.player.number);
+      document.getElementById("playerPositionInput").value = findValue(p, FIELD_MAP.player.position);
+      document.getElementById("playerPhotoInput").value = findValue(p, FIELD_MAP.player.photo);
+      document.getElementById("playerDescInput").value = findValue(p, FIELD_MAP.player.description);
+      const st = normalize(findValue(p, FIELD_MAP.player.status));
+      document.getElementById("playerStatusInput").value = st.includes("inactive") || st.includes("معطل") ? "inactive" : "active";
+      document.getElementById("playerFormTitle").textContent = "تعديل بيانات لاعب";
+      document.getElementById("playerCancelBtn").style.display = "inline-flex";
+    }
+
+    function resetPlayerForm() {
+      playerEditId = null;
+      document.getElementById("playerForm").reset();
+      document.getElementById("playerFormTitle").textContent = "إضافة لاعب جديد";
+      document.getElementById("playerCancelBtn").style.display = "none";
+    }
+
+    document.getElementById("playerCancelBtn").addEventListener("click", resetPlayerForm);
+
+    document.getElementById("playerForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const payload = {
+        id: playerEditId || undefined,
+        name: document.getElementById("playerNameInput").value,
+        number: document.getElementById("playerNumberInput").value,
+        position: document.getElementById("playerPositionInput").value,
+        photo: document.getElementById("playerPhotoInput").value,
+        description: document.getElementById("playerDescInput").value,
+        status: document.getElementById("playerStatusInput").value,
+      };
+      const action = playerEditId ? "updatePlayer" : "createPlayer";
+      const result = await callPavoAction(action, payload);
+      showActionMsg("playerActionMsg", result);
+      if (result && result.success) {
+        resetPlayerForm();
+        loadAdminData();
+      }
+    });
+
+    async function deletePlayerRow(id) {
+      if (!confirm("هل تريد حذف هذا اللاعب؟")) return;
+      const result = await callPavoAction("deletePlayer", { id });
+      showActionMsg("playerActionMsg", result);
+      if (result && result.success) loadAdminData();
+    }
+
+    /* ================= المباريات ================= */
+    let matchEditId = null;
+
+    function findMatchById(id) {
+      const matches = PAVO_CACHE.matches || [];
+      return matches.find((m, idx) => String(findValue(m, FIELD_MAP.match.id) || idx) === String(id));
+    }
+
+    function renderMatchesTable() {
+      const tbody = document.getElementById("matchesTableBody");
+      const matches = PAVO_CACHE.matches || [];
+      if (!matches.length) {
+        tbody.innerHTML = `<tr><td colspan="6">لا توجد بيانات حاليًا</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = matches
+        .map((m, idx) => {
+          const id = findValue(m, FIELD_MAP.match.id) || idx;
+          const opponent = findValue(m, FIELD_MAP.match.opponent);
+          const date = findValue(m, FIELD_MAP.match.date);
+          const competition = findValue(m, FIELD_MAP.match.competition);
+          const status = findValue(m, FIELD_MAP.match.status);
+          const pavoScore = findValue(m, FIELD_MAP.match.pavoScore);
+          const oppScore = findValue(m, FIELD_MAP.match.opponentScore);
+          return `
+            <tr data-id="${escapeHtml(id)}">
+              <td>${escapeHtml(opponent || "-")}</td>
+              <td>${escapeHtml(date || "-")}</td>
+              <td>${escapeHtml(competition || "-")}</td>
+              <td>${escapeHtml(translateMatchStatus(status) || "-")}</td>
+              <td>${escapeHtml(pavoScore !== "" ? pavoScore : "-")} : ${escapeHtml(oppScore !== "" ? oppScore : "-")}</td>
+              <td class="actions-cell">
+                <button type="button" class="btn btn-outline btn-sm act-edit">تعديل</button>
+                <button type="button" class="btn btn-danger btn-sm act-delete">حذف</button>
+              </td>
+            </tr>`;
+        })
+        .join("");
+    }
+
+    document.getElementById("matchesTableBody").addEventListener("click", function (e) {
+      const row = e.target.closest("tr");
+      if (!row) return;
+      const id = row.dataset.id;
+      if (e.target.classList.contains("act-edit")) editMatch(id);
+      if (e.target.classList.contains("act-delete")) deleteMatchRow(id);
+    });
+
+    function editMatch(id) {
+      const m = findMatchById(id);
+      if (!m) return;
+      matchEditId = id;
+      document.getElementById("matchOpponentInput").value = findValue(m, FIELD_MAP.match.opponent);
+      document.getElementById("matchDateInput").value = findValue(m, FIELD_MAP.match.date);
+      document.getElementById("matchTimeInput").value = findValue(m, FIELD_MAP.match.time);
+      document.getElementById("matchKickoffInput").value = findValue(m, FIELD_MAP.match.kickoff);
+      document.getElementById("matchCompetitionInput").value = findValue(m, FIELD_MAP.match.competition);
+      document.getElementById("matchVenueInput").value = findValue(m, FIELD_MAP.match.venue);
+      document.getElementById("matchPavoScoreInput").value = findValue(m, FIELD_MAP.match.pavoScore);
+      document.getElementById("matchOppScoreInput").value = findValue(m, FIELD_MAP.match.opponentScore);
+      const st = normalize(findValue(m, FIELD_MAP.match.status));
+      document.getElementById("matchStatusInput").value = st.includes("live") ? "live" : st.includes("finish") ? "finished" : "upcoming";
+      document.getElementById("matchFormTitle").textContent = "تعديل مباراة";
+      document.getElementById("matchCancelBtn").style.display = "inline-flex";
+    }
+
+    function resetMatchForm() {
+      matchEditId = null;
+      document.getElementById("matchForm").reset();
+      document.getElementById("matchFormTitle").textContent = "إضافة مباراة جديدة";
+      document.getElementById("matchCancelBtn").style.display = "none";
+    }
+
+    document.getElementById("matchCancelBtn").addEventListener("click", resetMatchForm);
+
+    document.getElementById("matchForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const payload = {
+        id: matchEditId || undefined,
+        opponent: document.getElementById("matchOpponentInput").value,
+        date: document.getElementById("matchDateInput").value,
+        time: document.getElementById("matchTimeInput").value,
+        kickoff: document.getElementById("matchKickoffInput").value,
+        competition: document.getElementById("matchCompetitionInput").value,
+        venue: document.getElementById("matchVenueInput").value,
+        pavoScore: document.getElementById("matchPavoScoreInput").value,
+        opponentScore: document.getElementById("matchOppScoreInput").value,
+        status: document.getElementById("matchStatusInput").value,
+      };
+      const action = matchEditId ? "updateMatch" : "createMatch";
+      const result = await callPavoAction(action, payload);
+      showActionMsg("matchActionMsg", result);
+      if (result && result.success) {
+        resetMatchForm();
+        loadAdminData();
+      }
+    });
+
+    async function deleteMatchRow(id) {
+      if (!confirm("هل تريد حذف هذه المباراة؟")) return;
+      const result = await callPavoAction("deleteMatch", { id });
+      showActionMsg("matchActionMsg", result);
+      if (result && result.success) loadAdminData();
+    }
+
+    /* ================= أحداث المباراة ================= */
+    function renderEventsMatchOptions() {
+      const select = document.getElementById("eventMatchInput");
+      const matches = PAVO_CACHE.matches || [];
+      if (!matches.length) {
+        select.innerHTML = `<option value="">لا توجد مباريات متاحة</option>`;
+        return;
+      }
+      select.innerHTML = matches
+        .map((m, idx) => {
+          const id = findValue(m, FIELD_MAP.match.id) || idx;
+          const opponent = findValue(m, FIELD_MAP.match.opponent) || "بدون اسم";
+          const date = findValue(m, FIELD_MAP.match.date);
+          return `<option value="${escapeHtml(id)}">${escapeHtml(opponent)}${date ? " — " + escapeHtml(date) : ""}</option>`;
+        })
+        .join("");
+    }
+
+    function renderEventsTable() {
+      const tbody = document.getElementById("eventsTableBody");
+      const events = PAVO_CACHE.events || [];
+      if (!events.length) {
+        tbody.innerHTML = `<tr><td colspan="6">لا توجد بيانات حاليًا</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = events
+        .map((ev, idx) => {
+          const id = findValue(ev, FIELD_MAP.event.id) || idx;
+          const matchRef = findValue(ev, FIELD_MAP.event.matchId);
+          const minute = findValue(ev, FIELD_MAP.event.minute);
+          const player = findValue(ev, FIELD_MAP.event.player);
+          const type = findValue(ev, FIELD_MAP.event.type);
+          const details = findValue(ev, FIELD_MAP.event.details);
+          return `
+            <tr data-id="${escapeHtml(id)}">
+              <td>${escapeHtml(matchRef || "-")}</td>
+              <td>${escapeHtml(minute || "-")}'</td>
+              <td>${escapeHtml(player || "-")}</td>
+              <td>${escapeHtml(translateEventType(type))}</td>
+              <td>${escapeHtml(details || "-")}</td>
+              <td class="actions-cell">
+                <button type="button" class="btn btn-danger btn-sm act-delete">حذف</button>
+              </td>
+            </tr>`;
+        })
+        .join("");
+    }
+
+    document.getElementById("eventsTableBody").addEventListener("click", function (e) {
+      const row = e.target.closest("tr");
+      if (!row) return;
+      if (e.target.classList.contains("act-delete")) deleteEventRow(row.dataset.id);
+    });
+
+    document.getElementById("eventForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const payload = {
+        matchId: document.getElementById("eventMatchInput").value,
+        minute: document.getElementById("eventMinuteInput").value,
+        player: document.getElementById("eventPlayerInput").value,
+        type: document.getElementById("eventTypeInput").value,
+        details: document.getElementById("eventDetailsInput").value,
+      };
+      const result = await callPavoAction("createEvent", payload);
+      showActionMsg("eventActionMsg", result);
+      if (result && result.success) {
+        document.getElementById("eventForm").reset();
+        loadAdminData();
+      }
+    });
+
+    async function deleteEventRow(id) {
+      if (!confirm("هل تريد حذف هذا الحدث؟")) return;
+      const result = await callPavoAction("deleteEvent", { id });
+      showActionMsg("eventActionMsg", result);
+      if (result && result.success) loadAdminData();
+    }
+
+    /* ================= الأخبار ================= */
+    let newsEditId = null;
+
+    function findNewsById(id) {
+      const news = PAVO_CACHE.news || [];
+      return news.find((n, idx) => String(findValue(n, FIELD_MAP.news.id) || idx) === String(id));
+    }
+
+    function renderNewsTable() {
+      const tbody = document.getElementById("newsTableBody");
+      const news = PAVO_CACHE.news || [];
+      if (!news.length) {
+        tbody.innerHTML = `<tr><td colspan="4">لا توجد بيانات حاليًا</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = news
+        .map((n, idx) => {
+          const id = findValue(n, FIELD_MAP.news.id) || idx;
+          const title = findValue(n, FIELD_MAP.news.title);
+          const date = findValue(n, FIELD_MAP.news.date);
+          const status = findValue(n, FIELD_MAP.news.status) || "منشور";
+          return `
+            <tr data-id="${escapeHtml(id)}">
+              <td>${escapeHtml(title || "-")}</td>
+              <td>${escapeHtml(date || "-")}</td>
+              <td>${escapeHtml(status)}</td>
+              <td class="actions-cell">
+                <button type="button" class="btn btn-outline btn-sm act-edit">تعديل</button>
+                <button type="button" class="btn btn-danger btn-sm act-delete">حذف</button>
+              </td>
+            </tr>`;
+        })
+        .join("");
+    }
+
+    document.getElementById("newsTableBody").addEventListener("click", function (e) {
+      const row = e.target.closest("tr");
+      if (!row) return;
+      const id = row.dataset.id;
+      if (e.target.classList.contains("act-edit")) editNews(id);
+      if (e.target.classList.contains("act-delete")) deleteNewsRow(id);
+    });
+
+    function editNews(id) {
+      const n = findNewsById(id);
+      if (!n) return;
+      newsEditId = id;
+      document.getElementById("newsTitleInput").value = findValue(n, FIELD_MAP.news.title);
+      document.getElementById("newsDateInput").value = findValue(n, FIELD_MAP.news.date);
+      document.getElementById("newsImageInput").value = findValue(n, FIELD_MAP.news.image);
+      document.getElementById("newsContentInput").value = findValue(n, FIELD_MAP.news.content);
+      const st = normalize(findValue(n, FIELD_MAP.news.status));
+      document.getElementById("newsStatusInput").value = st.includes("inactive") || st.includes("مخفي") ? "inactive" : "active";
+      document.getElementById("newsFormTitle").textContent = "تعديل خبر";
+      document.getElementById("newsCancelBtn").style.display = "inline-flex";
+    }
+
+    function resetNewsForm() {
+      newsEditId = null;
+      document.getElementById("newsForm").reset();
+      document.getElementById("newsFormTitle").textContent = "إضافة خبر جديد";
+      document.getElementById("newsCancelBtn").style.display = "none";
+    }
+
+    document.getElementById("newsCancelBtn").addEventListener("click", resetNewsForm);
+
+    document.getElementById("newsForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const payload = {
+        id: newsEditId || undefined,
+        title: document.getElementById("newsTitleInput").value,
+        date: document.getElementById("newsDateInput").value,
+        image: document.getElementById("newsImageInput").value,
+        content: document.getElementById("newsContentInput").value,
+        status: document.getElementById("newsStatusInput").value,
+      };
+      const action = newsEditId ? "updateNews" : "createNews";
+      const result = await callPavoAction(action, payload);
+      showActionMsg("newsActionMsg", result);
+      if (result && result.success) {
+        resetNewsForm();
+        loadAdminData();
+      }
+    });
+
+    async function deleteNewsRow(id) {
+      if (!confirm("هل تريد حذف هذا الخبر؟")) return;
+      const result = await callPavoAction("deleteNews", { id });
+      showActionMsg("newsActionMsg", result);
+      if (result && result.success) loadAdminData();
+    }
+
+    // -------------------- بدء التشغيل --------------------
+    if (isAdminLoggedIn()) {
+      showAdminPanel();
+    } else {
+      showLoginScreen();
+    }
+  </script>
+</body>
+</html>
