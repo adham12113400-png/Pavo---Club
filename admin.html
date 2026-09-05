@@ -124,6 +124,9 @@
               <div class="form-field"><label>رقم القميص</label><input type="text" id="playerNumberInput"></div>
               <div class="form-field"><label>المركز</label><input type="text" id="playerPositionInput" placeholder="مثال: مهاجم"></div>
               <div class="form-field"><label>رابط الصورة</label><input type="text" id="playerPhotoInput"></div>
+              <div class="form-field"><label>تاريخ الميلاد</label><input type="date" id="playerBirthDateInput"></div>
+              <div class="form-field"><label>الطول (سم)</label><input type="text" id="playerHeightInput"></div>
+              <div class="form-field"><label>القدم المفضلة</label><input type="text" id="playerPreferredFootInput" placeholder="مثال: اليمنى"></div>
               <div class="form-field"><label>الحالة</label>
                 <select id="playerStatusInput">
                   <option value="active">نشط</option>
@@ -164,9 +167,9 @@
           <form id="matchForm">
             <div class="form-grid">
               <div class="form-field"><label>الفريق المنافس</label><input type="text" id="matchOpponentInput" required></div>
+              <div class="form-field"><label>رابط شعار الفريق المنافس</label><input type="text" id="matchOpponentLogoInput"></div>
               <div class="form-field"><label>التاريخ</label><input type="date" id="matchDateInput"></div>
               <div class="form-field"><label>الوقت</label><input type="time" id="matchTimeInput"></div>
-              <div class="form-field"><label>موعد بداية المباراة (للمباشر)</label><input type="datetime-local" id="matchKickoffInput"></div>
               <div class="form-field"><label>البطولة</label><input type="text" id="matchCompetitionInput"></div>
               <div class="form-field"><label>الملعب</label><input type="text" id="matchVenueInput"></div>
               <div class="form-field"><label>نتيجة PAVO</label><input type="number" id="matchPavoScoreInput"></div>
@@ -285,7 +288,7 @@
        ============================================================ */
 
     // ⚠️ ضع كلمة المرور الحقيقية هنا بدلًا من هذا الـ Placeholder قبل النشر
-    const ADMIN_PASSWORD = "101199";
+    const ADMIN_PASSWORD = "ADMIN_PASSWORD_HERE";
 
     // -------------------- تسجيل الدخول --------------------
     function isAdminLoggedIn() {
@@ -420,13 +423,13 @@
           const name = findValue(p, FIELD_MAP.player.name);
           const number = findValue(p, FIELD_MAP.player.number);
           const position = findValue(p, FIELD_MAP.player.position);
-          const status = findValue(p, FIELD_MAP.player.status) || "نشط";
+          const isActive = isEntryActive(findValue(p, FIELD_MAP.player.status));
           return `
             <tr data-id="${escapeHtml(id)}">
               <td>${escapeHtml(name || "-")}</td>
               <td>${escapeHtml(number || "-")}</td>
               <td>${escapeHtml(position || "-")}</td>
-              <td>${escapeHtml(status)}</td>
+              <td>${isActive ? "نشط" : "معطّل"}</td>
               <td class="actions-cell">
                 <button type="button" class="btn btn-outline btn-sm act-edit">تعديل</button>
                 <button type="button" class="btn btn-danger btn-sm act-delete">حذف</button>
@@ -452,9 +455,12 @@
       document.getElementById("playerNumberInput").value = findValue(p, FIELD_MAP.player.number);
       document.getElementById("playerPositionInput").value = findValue(p, FIELD_MAP.player.position);
       document.getElementById("playerPhotoInput").value = findValue(p, FIELD_MAP.player.photo);
+      document.getElementById("playerBirthDateInput").value = toDateInputValue(findValue(p, FIELD_MAP.player.birthDate));
+      document.getElementById("playerHeightInput").value = findValue(p, FIELD_MAP.player.height);
+      document.getElementById("playerPreferredFootInput").value = findValue(p, FIELD_MAP.player.preferredFoot);
       document.getElementById("playerDescInput").value = findValue(p, FIELD_MAP.player.description);
-      const st = normalize(findValue(p, FIELD_MAP.player.status));
-      document.getElementById("playerStatusInput").value = st.includes("inactive") || st.includes("معطل") ? "inactive" : "active";
+      const isActive = isEntryActive(findValue(p, FIELD_MAP.player.status));
+      document.getElementById("playerStatusInput").value = isActive ? "active" : "inactive";
       document.getElementById("playerFormTitle").textContent = "تعديل بيانات لاعب";
       document.getElementById("playerCancelBtn").style.display = "inline-flex";
     }
@@ -476,6 +482,9 @@
         number: document.getElementById("playerNumberInput").value,
         position: document.getElementById("playerPositionInput").value,
         photo: document.getElementById("playerPhotoInput").value,
+        birthDate: document.getElementById("playerBirthDateInput").value,
+        height: document.getElementById("playerHeightInput").value,
+        preferredFoot: document.getElementById("playerPreferredFootInput").value,
         description: document.getElementById("playerDescInput").value,
         status: document.getElementById("playerStatusInput").value,
       };
@@ -522,7 +531,7 @@
           return `
             <tr data-id="${escapeHtml(id)}">
               <td>${escapeHtml(opponent || "-")}</td>
-              <td>${escapeHtml(date || "-")}</td>
+              <td>${escapeHtml(formatArabicDate(date) || "-")}</td>
               <td>${escapeHtml(competition || "-")}</td>
               <td>${escapeHtml(translateMatchStatus(status) || "-")}</td>
               <td>${escapeHtml(pavoScore !== "" ? pavoScore : "-")} : ${escapeHtml(oppScore !== "" ? oppScore : "-")}</td>
@@ -548,9 +557,9 @@
       if (!m) return;
       matchEditId = id;
       document.getElementById("matchOpponentInput").value = findValue(m, FIELD_MAP.match.opponent);
-      document.getElementById("matchDateInput").value = findValue(m, FIELD_MAP.match.date);
-      document.getElementById("matchTimeInput").value = findValue(m, FIELD_MAP.match.time);
-      document.getElementById("matchKickoffInput").value = findValue(m, FIELD_MAP.match.kickoff);
+      document.getElementById("matchOpponentLogoInput").value = findValue(m, FIELD_MAP.match.opponentLogo);
+      document.getElementById("matchDateInput").value = toDateInputValue(findValue(m, FIELD_MAP.match.date));
+      document.getElementById("matchTimeInput").value = toTimeInputValue(findValue(m, FIELD_MAP.match.time));
       document.getElementById("matchCompetitionInput").value = findValue(m, FIELD_MAP.match.competition);
       document.getElementById("matchVenueInput").value = findValue(m, FIELD_MAP.match.venue);
       document.getElementById("matchPavoScoreInput").value = findValue(m, FIELD_MAP.match.pavoScore);
@@ -575,9 +584,9 @@
       const payload = {
         id: matchEditId || undefined,
         opponent: document.getElementById("matchOpponentInput").value,
+        opponentLogo: document.getElementById("matchOpponentLogoInput").value,
         date: document.getElementById("matchDateInput").value,
         time: document.getElementById("matchTimeInput").value,
-        kickoff: document.getElementById("matchKickoffInput").value,
         competition: document.getElementById("matchCompetitionInput").value,
         venue: document.getElementById("matchVenueInput").value,
         pavoScore: document.getElementById("matchPavoScoreInput").value,
@@ -659,9 +668,10 @@
       const payload = {
         matchId: document.getElementById("eventMatchInput").value,
         minute: document.getElementById("eventMinuteInput").value,
-        player: document.getElementById("eventPlayerInput").value,
-        type: document.getElementById("eventTypeInput").value,
-        details: document.getElementById("eventDetailsInput").value,
+        playerId: "",
+        playerName: document.getElementById("eventPlayerInput").value,
+        eventType: document.getElementById("eventTypeInput").value,
+        description: document.getElementById("eventDetailsInput").value,
       };
       const result = await callPavoAction("createEvent", payload);
       showActionMsg("eventActionMsg", result);
@@ -698,12 +708,12 @@
           const id = findValue(n, FIELD_MAP.news.id) || idx;
           const title = findValue(n, FIELD_MAP.news.title);
           const date = findValue(n, FIELD_MAP.news.date);
-          const status = findValue(n, FIELD_MAP.news.status) || "منشور";
+          const isActive = isEntryActive(findValue(n, FIELD_MAP.news.status));
           return `
             <tr data-id="${escapeHtml(id)}">
               <td>${escapeHtml(title || "-")}</td>
-              <td>${escapeHtml(date || "-")}</td>
-              <td>${escapeHtml(status)}</td>
+              <td>${escapeHtml(formatArabicDate(date) || "-")}</td>
+              <td>${isActive ? "منشور" : "مخفي"}</td>
               <td class="actions-cell">
                 <button type="button" class="btn btn-outline btn-sm act-edit">تعديل</button>
                 <button type="button" class="btn btn-danger btn-sm act-delete">حذف</button>
@@ -726,11 +736,11 @@
       if (!n) return;
       newsEditId = id;
       document.getElementById("newsTitleInput").value = findValue(n, FIELD_MAP.news.title);
-      document.getElementById("newsDateInput").value = findValue(n, FIELD_MAP.news.date);
+      document.getElementById("newsDateInput").value = toDateInputValue(findValue(n, FIELD_MAP.news.date));
       document.getElementById("newsImageInput").value = findValue(n, FIELD_MAP.news.image);
       document.getElementById("newsContentInput").value = findValue(n, FIELD_MAP.news.content);
-      const st = normalize(findValue(n, FIELD_MAP.news.status));
-      document.getElementById("newsStatusInput").value = st.includes("inactive") || st.includes("مخفي") ? "inactive" : "active";
+      const isActive = isEntryActive(findValue(n, FIELD_MAP.news.status));
+      document.getElementById("newsStatusInput").value = isActive ? "active" : "inactive";
       document.getElementById("newsFormTitle").textContent = "تعديل خبر";
       document.getElementById("newsCancelBtn").style.display = "inline-flex";
     }
@@ -749,10 +759,10 @@
       const payload = {
         id: newsEditId || undefined,
         title: document.getElementById("newsTitleInput").value,
-        date: document.getElementById("newsDateInput").value,
+        publishedAt: document.getElementById("newsDateInput").value,
         image: document.getElementById("newsImageInput").value,
         content: document.getElementById("newsContentInput").value,
-        status: document.getElementById("newsStatusInput").value,
+        active: document.getElementById("newsStatusInput").value,
       };
       const action = newsEditId ? "updateNews" : "createNews";
       const result = await callPavoAction(action, payload);
