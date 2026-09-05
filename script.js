@@ -86,8 +86,11 @@ const FIELD_MAP = {
     number: ["number", "shirtnumber", "jerseynumber", "رقم"],
     position: ["position", "role", "مركز"],
     photo: ["photo", "image", "صورة"],
+    birthDate: ["birthdate", "dob", "تاريخالميلاد"],
+    height: ["height", "الطول"],
+    preferredFoot: ["preferredfoot", "foot", "القدمالمفضلة"],
     description: ["description", "bio", "notes", "وصف"],
-    status: ["status", "حالة"],
+    status: ["status", "حالة", "active"],
   },
   match: {
     id: ["id"],
@@ -95,6 +98,7 @@ const FIELD_MAP = {
     date: ["date", "matchdate", "تاريخ"],
     time: ["time", "matchtime", "وقت"],
     kickoff: ["kickoff", "datetime", "starttime", "بدايةالمباراة"],
+    opponentLogo: ["opponentlogo", "rivallogo", "شعارالمنافس"],
     competition: ["competition", "tournament", "league", "بطولة"],
     venue: ["venue", "stadium", "ملعب"],
     pavoScore: ["pavoscore", "homescore", "ourscore", "نتيجةبافو", "نتيجةالنادي"],
@@ -114,9 +118,9 @@ const FIELD_MAP = {
     id: ["id"],
     title: ["title", "عنوان"],
     content: ["content", "body", "محتوى"],
-    date: ["date", "تاريخ"],
+    date: ["date", "تاريخ", "publishedat", "published"],
     image: ["image", "photo", "صورة"],
-    status: ["status", "حالة"],
+    status: ["status", "حالة", "active"],
   },
 };
 
@@ -204,6 +208,111 @@ function toDirectImageUrl(url) {
   }
 
   return trimmed; // رابط صورة مباشر عادي (غير Google Drive) — يُترك كما هو
+}
+
+/* ------------------------------------------------------------
+   4.1) تنسيق قيم التاريخ/الوقت
+   بعد تعديل Google Apps Script (راجع رسالة التسليم)، أصبح الـ API
+   يرجع التاريخ كنص "yyyy-MM-dd" والوقت كنص "HH:mm" مباشرة، فنعتمد
+   على قراءتهما كنصوص بالدرجة الأولى، مع الإبقاء على معالجة احتياطية
+   لأي قيمة Date خام قديمة (لو الكاش لسه فيه بيانات قديمة مثلًا).
+   ------------------------------------------------------------ */
+
+function formatArabicDateParts(year, monthIndex, day) {
+  const months = [
+    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+  ];
+  return `${day} ${months[monthIndex]} ${year}`;
+}
+
+function formatArabicTimeParts(hours, minutes) {
+  const period = hours >= 12 ? "م" : "ص";
+  let h = hours % 12;
+  if (h === 0) h = 12;
+  return `${h}:${String(minutes).padStart(2, "0")} ${period}`;
+}
+
+function formatArabicDate(value) {
+  if (value === undefined || value === null || value === "") return "";
+  const str = String(value).trim();
+
+  // الصيغة النظيفة القادمة من الـ API بعد الإصلاح: yyyy-MM-dd أو yyyy-MM-ddTHH:mm
+  let m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return formatArabicDateParts(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+
+  // احتياطي لأي قيمة Date خام قديمة (ISO مع Z مثلًا)
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    if (d.getFullYear() === 1899) return formatArabicTime(value); // كانت أصلًا وقت فقط
+    return formatArabicDateParts(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  return str; // نص عادي غير معروف الصيغة — اعرضه كما هو
+}
+
+function formatArabicTime(value) {
+  if (value === undefined || value === null || value === "") return "";
+  const str = String(value).trim();
+
+  // الصيغة النظيفة: HH:mm (وقت فقط) أو جزء الوقت داخل yyyy-MM-ddTHH:mm
+  let m = str.match(/T(\d{2}):(\d{2})/) || (!str.includes("-") ? str.match(/^(\d{2}):(\d{2})/) : null);
+  if (m) return formatArabicTimeParts(parseInt(m[1], 10), parseInt(m[2], 10));
+
+  // احتياطي لأي قيمة Date خام قديمة
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) return formatArabicTimeParts(d.getHours(), d.getMinutes());
+
+  return str;
+}
+
+// تحويل أي قيمة قادمة من الـ API إلى صيغة يفهمها <input type="date">
+function toDateInputValue(value) {
+  if (!value) return "";
+  const str = String(value).trim();
+  let m = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1];
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  return "";
+}
+
+// تحويل أي قيمة قادمة من الـ API إلى صيغة يفهمها <input type="time">
+function toTimeInputValue(value) {
+  if (!value) return "";
+  const str = String(value).trim();
+  let m = str.match(/(\d{2}:\d{2})/);
+  if (m) return m[1];
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+  return "";
+}
+
+// تحويل أي قيمة قادمة من الـ API إلى صيغة يفهمها <input type="datetime-local">
+function toDateTimeLocalInputValue(value) {
+  if (!value) return "";
+  const str = String(value).trim();
+  let m = str.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+  if (m) return `${m[1]}T${m[2]}`;
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+  return "";
+}
+
+// فحص إن كان صف (لاعب/خبر) "نشط" — يتعامل مع Boolean الحقيقي القادم
+// من دالة convertActive() في Apps Script، ومع أي نص قديم بديل
+function isEntryActive(rawValue) {
+  if (typeof rawValue === "boolean") return rawValue;
+  if (rawValue === "" || rawValue === undefined || rawValue === null) return true; // لا توجد بيانات حالة = نشط افتراضيًا
+  const n = normalize(rawValue);
+  if (n === "false" || n === "0") return false;
+  return !(n.includes("inactive") || n.includes("disabled") || n.includes("معطل") || n.includes("موقوف") || n.includes("غيرنشط"));
 }
 
 function translatePosition(raw) {
@@ -378,11 +487,7 @@ function renderPlayers() {
   const container = document.getElementById("playersGrid");
   if (!container) return;
 
-  const players = (PAVO_CACHE.players || []).filter((p) => {
-    const st = normalize(findValue(p, FIELD_MAP.player.status));
-    // إخفاء اللاعبين المعطّلين فقط إذا كانت الحالة تشير صراحة لذلك
-    return !(st.includes("inactive") || st.includes("disabled") || st.includes("معطل") || st.includes("موقوف") || st.includes("غيرنشط"));
-  });
+  const players = (PAVO_CACHE.players || []).filter((p) => isEntryActive(findValue(p, FIELD_MAP.player.status)));
 
   if (!players.length) {
     container.innerHTML = `<p class="empty-msg">${NO_DATA_TEXT}</p>`;
@@ -419,7 +524,7 @@ function renderPlayers() {
 
 function combineDateTime(dateStr, timeStr) {
   if (!dateStr) return "";
-  return timeStr ? `${dateStr} ${timeStr}` : dateStr;
+  return timeStr ? `${dateStr}T${timeStr}` : dateStr;
 }
 
 function parseKickoff(kickoffStr) {
@@ -436,6 +541,7 @@ function classifyMatches() {
     return {
       raw: m,
       opponent: findValue(m, FIELD_MAP.match.opponent),
+      opponentLogo: toDirectImageUrl(findValue(m, FIELD_MAP.match.opponentLogo)),
       date,
       time,
       kickoff: findValue(m, FIELD_MAP.match.kickoff) || combineDateTime(date, time),
@@ -466,17 +572,20 @@ function renderLiveMatch(m) {
   const kickoffDate = parseKickoff(m.kickoff);
   const rawMinute = findValue(m.raw, FIELD_MAP.match.minute);
   const minuteText = kickoffDate ? computeLiveMinute(kickoffDate) : rawMinute;
+  const pavoLogo = getClubInfo().logo;
 
   container.innerHTML = `
     <div class="live-match-card">
       <div class="live-badge">● مباشر</div>
       <div class="live-teams">
         <div class="team-block">
+          <img class="team-logo${pavoLogo ? "" : " img-placeholder"}" src="${pavoLogo ? escapeHtml(pavoLogo) : ""}" alt="PAVO" onerror="this.classList.add('img-placeholder'); this.removeAttribute('src');">
           <span class="team-name">PAVO</span>
           <span class="team-score">${escapeHtml(m.pavoScore !== "" ? m.pavoScore : "-")}</span>
         </div>
         <span class="score-sep">:</span>
         <div class="team-block">
+          <img class="team-logo${m.opponentLogo ? "" : " img-placeholder"}" src="${m.opponentLogo ? escapeHtml(m.opponentLogo) : ""}" alt="${escapeHtml(m.opponent || "منافس")}" onerror="this.classList.add('img-placeholder'); this.removeAttribute('src');">
           <span class="team-name">${escapeHtml(m.opponent || NO_DATA_TEXT)}</span>
           <span class="team-score">${escapeHtml(m.oppScore !== "" ? m.oppScore : "-")}</span>
         </div>
@@ -506,12 +615,15 @@ function renderPastMatches(list) {
       (m) => `
       <div class="match-row">
         <div class="match-row-main">
-          <span class="match-opponent">${escapeHtml(m.opponent || NO_DATA_TEXT)}</span>
+          <span class="match-opponent">
+            ${m.opponentLogo ? `<img class="match-row-logo" src="${escapeHtml(m.opponentLogo)}" alt="" onerror="this.style.display='none';">` : ""}
+            ${escapeHtml(m.opponent || NO_DATA_TEXT)}
+          </span>
           <span class="match-score">${escapeHtml(m.pavoScore !== "" ? m.pavoScore : "-")} : ${escapeHtml(m.oppScore !== "" ? m.oppScore : "-")}</span>
         </div>
         <div class="match-row-meta">
-          ${m.date ? `<span>📅 ${escapeHtml(m.date)}</span>` : ""}
-          ${m.time ? `<span>🕒 ${escapeHtml(m.time)}</span>` : ""}
+          ${m.date ? `<span>📅 ${escapeHtml(formatArabicDate(m.date))}</span>` : ""}
+          ${m.time ? `<span>🕒 ${escapeHtml(formatArabicTime(m.time))}</span>` : ""}
           ${m.competition ? `<span>🏆 ${escapeHtml(m.competition)}</span>` : ""}
           ${m.venue ? `<span>📍 ${escapeHtml(m.venue)}</span>` : ""}
         </div>
@@ -580,11 +692,14 @@ function renderUpcomingMatches(list) {
       (m) => `
       <div class="match-row">
         <div class="match-row-main">
-          <span class="match-opponent">${escapeHtml(m.opponent || NO_DATA_TEXT)}</span>
+          <span class="match-opponent">
+            ${m.opponentLogo ? `<img class="match-row-logo" src="${escapeHtml(m.opponentLogo)}" alt="" onerror="this.style.display='none';">` : ""}
+            ${escapeHtml(m.opponent || NO_DATA_TEXT)}
+          </span>
         </div>
         <div class="match-row-meta">
-          ${m.date ? `<span>📅 ${escapeHtml(m.date)}</span>` : ""}
-          ${m.time ? `<span>🕒 ${escapeHtml(m.time)}</span>` : ""}
+          ${m.date ? `<span>📅 ${escapeHtml(formatArabicDate(m.date))}</span>` : ""}
+          ${m.time ? `<span>🕒 ${escapeHtml(formatArabicTime(m.time))}</span>` : ""}
           ${m.competition ? `<span>🏆 ${escapeHtml(m.competition)}</span>` : ""}
           ${m.venue ? `<span>📍 ${escapeHtml(m.venue)}</span>` : ""}
         </div>
@@ -644,10 +759,7 @@ function renderNews() {
   const container = document.getElementById("newsList");
   if (!container) return;
 
-  const news = (PAVO_CACHE.news || []).filter((n) => {
-    const st = normalize(findValue(n, FIELD_MAP.news.status));
-    return !(st.includes("inactive") || st.includes("disabled") || st.includes("معطل") || st.includes("غيرنشط"));
-  });
+  const news = (PAVO_CACHE.news || []).filter((n) => isEntryActive(findValue(n, FIELD_MAP.news.status)));
 
   if (!news.length) {
     container.innerHTML = `<p class="empty-msg">لا توجد أخبار حاليًا</p>`;
@@ -670,7 +782,7 @@ function renderNews() {
           ${image ? `<img class="news-image" src="${escapeHtml(image)}" alt="${escapeHtml(title || "خبر")}" onerror="this.style.display='none';">` : ""}
           <div class="news-body">
             <h3 class="news-title">${escapeHtml(title || NO_DATA_TEXT)}</h3>
-            ${date ? `<span class="news-date">${escapeHtml(date)}</span>` : ""}
+            ${date ? `<span class="news-date">${escapeHtml(formatArabicDate(date))}</span>` : ""}
             ${content ? `<p class="news-content">${escapeHtml(content)}</p>` : ""}
           </div>
         </div>
