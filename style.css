@@ -451,6 +451,26 @@ ul {
   min-width: 110px;
 }
 
+.team-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--card-border);
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+
+.match-row-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline-end: 6px;
+}
+
 .team-name {
   font-weight: 700;
   font-size: 15px;
