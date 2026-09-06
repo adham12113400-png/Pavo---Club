@@ -522,15 +522,47 @@ function renderPlayers() {
     .join("");
 }
 
-function combineDateTime(dateStr, timeStr) {
-  if (!dateStr) return "";
-  return timeStr ? `${dateStr}T${timeStr}` : dateStr;
-}
+// توقيت النادي الرسمي — كل حسابات "الدقيقة المباشرة" والعد التنازلي
+// بتتحسب على أساسه دايمًا، بغض النظر عن توقيت جهاز الزائر نفسه
+const CLUB_TIMEZONE = "Africa/Cairo";
 
-function parseKickoff(kickoffStr) {
-  if (!kickoffStr) return null;
-  const d = new Date(kickoffStr);
-  return isNaN(d.getTime()) ? null : d;
+// تحويل تاريخ + وقت (زي ما اتكتبوا بالظبط في لوحة الأدمن) إلى لحظة
+// زمنية مطلقة صحيحة حسب توقيت مصر — بيشتغل صح تلقائيًا حتى لو
+// اتغيّر التوقيت الصيفي، ولا يعتمد على توقيت متصفح الزائر خالص
+function zonedTimeToUtc(dateStr, timeStr, timeZone) {
+  if (!dateStr) return null;
+
+  const naiveISO = `${dateStr}T${timeStr || "00:00"}:00`;
+  const guess = new Date(naiveISO + "Z"); // خطوة أولى: افتراض مبدئي كـ UTC
+  if (isNaN(guess.getTime())) return null;
+
+  try {
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    });
+
+    const parts = fmt.formatToParts(guess).reduce((acc, p) => {
+      if (p.type !== "literal") acc[p.type] = p.value;
+      return acc;
+    }, {});
+
+    // نشوف اللحظة دي بتتقرأ إزاي فعليًا في توقيت مصر
+    const asZoned = new Date(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}Z`);
+
+    // الفرق بين الافتراض المبدئي والقراءة الفعلية = فرق التوقيت المطلوب تصحيحه
+    const diff = guess.getTime() - asZoned.getTime();
+
+    return new Date(guess.getTime() + diff);
+  } catch (err) {
+    return guess; // احتياطي لو المتصفح مش داعم Intl.DateTimeFormat بالكامل
+  }
 }
 
 function classifyMatches() {
@@ -544,7 +576,7 @@ function classifyMatches() {
       opponentLogo: toDirectImageUrl(findValue(m, FIELD_MAP.match.opponentLogo)),
       date,
       time,
-      kickoff: findValue(m, FIELD_MAP.match.kickoff) || combineDateTime(date, time),
+      kickoffDate: zonedTimeToUtc(date, time, CLUB_TIMEZONE),
       competition: findValue(m, FIELD_MAP.match.competition),
       venue: findValue(m, FIELD_MAP.match.venue),
       pavoScore: findValue(m, FIELD_MAP.match.pavoScore),
@@ -569,7 +601,7 @@ function renderLiveMatch(m) {
     return;
   }
 
-  const kickoffDate = parseKickoff(m.kickoff);
+  const kickoffDate = m.kickoffDate;
   const rawMinute = findValue(m.raw, FIELD_MAP.match.minute);
   const minuteText = kickoffDate ? computeLiveMinute(kickoffDate) : rawMinute;
   const pavoLogo = getClubInfo().logo;
@@ -649,7 +681,7 @@ function renderCountdown(nextMatch) {
     return;
   }
 
-  const kickoffDate = parseKickoff(nextMatch.kickoff);
+  const kickoffDate = nextMatch.kickoffDate;
   if (!kickoffDate) {
     el.textContent = "";
     return;
